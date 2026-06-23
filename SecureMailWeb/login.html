@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureMail - تسجيل الدخول</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Animated Backgrounds -->
+    <div class="cyber-grid"></div>
+    <div class="bg-glow"></div>
+
+    <div class="auth-container">
+        <div class="auth-panel glass-panel">
+            <div class="auth-header">
+                <div class="logo">S</div>
+                <h1>تسجيل الدخول / Login</h1>
+                <p>أدخل بياناتك للوصول إلى لوحة التحكم الخاصة بك.</p>
+            </div>
+
+            <div id="responseNotice" class="notice text-main" style="display: none; margin-bottom: 20px;"></div>
+
+            <form class="form" id="loginForm" autocomplete="off">
+                <div class="field">
+                    <div class="label">البريد الإلكتروني / Email</div>
+                    <input type="email" id="email" class="input" required placeholder="example@mail.com">
+                </div>
+
+                <div class="field">
+                    <div class="label">كلمة المرور / Password</div>
+                    <input type="password" id="password" class="input" required>
+                </div>
+
+                <button type="submit" class="btn primary" id="submitBtn">دخول / Login</button>
+
+                <div class="small" style="text-align: center; margin-top: 15px;">
+                    ليس لديك حساب؟ <a href="register.html">إنشاء حساب جديد</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <script>
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<div>${message}</div><div class="toast-close" onclick="this.parentElement.remove()">✕</div>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.animation = 'slideInRight 0.4s reverse forwards'; setTimeout(() => toast.remove(), 400); }, 5000);
+        }
+    </script>
+    <script src="auth.js"></script>
+</body>
+
+</html>

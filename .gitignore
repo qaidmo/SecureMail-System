@@ -1,0 +1,40 @@
+# =========================================
+# 1. تجاهل ملفات الباك إند (C# .NET)
+# =========================================
+# تجاهل ملفات الإعدادات وكلمات المرور والمفاتيح (هام جداً)
+SecureMailBackend/appsettings.json
+SecureMailBackend/appsettings.Development.json
+SecureMailBackend/appsettings.Production.json
+SecureMailBackend/secrets.json
+SecureMailBackend/firebase-adminsdk.json
+
+# تجاهل ملفات إعدادات المستخدم المحلية لبيئة التطوير
+SecureMailBackend/*.csproj.user
+
+# تجاهل مجلدات البناء المؤقتة والثقيلة
+SecureMailBackend/bin/
+SecureMailBackend/obj/
+
+# =========================================
+# 2. تجاهل ملفات تطبيق الموبايل (Flutter)
+# =========================================
+# تجاهل مفاتيح فايربيس الخاصة بالموبايل (أندرويد و iOS)
+secure_mail_mobile/android/app/google-services.json
+secure_mail_mobile/ios/Runner/GoogleService-Info.plist
+secure_mail_mobile/lib/firebase_options.dart
+
+# تجاهل مجلدات البناء الثقيلة
+secure_mail_mobile/build/
+secure_mail_mobile/.dart_tool/
+secure_mail_mobile/.flutter-plugins
+secure_mail_mobile/.flutter-plugins-dependencies
+
+# =========================================
+# 3. تجاهل الملفات العامة للويب أو النظام
+# =========================================
+# تجاهل أي ملفات بيئة تحتوي على مفاتيح في أي مجلد
+*.env
+
+# تجاهل ملفات السجلات والأخطاء
+*.log
+*.tmp

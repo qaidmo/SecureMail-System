@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureMail - لوحة التحكم</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* إضافة بسيطة لتنسيق العناوين داخل الجداول والصفوف */
+        .row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        .list li {
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            position: relative;
+            padding-right: 20px;
+        }
+
+        .list li::before {
+            content: "•";
+            position: absolute;
+            right: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Animated Backgrounds -->
+    <div class="cyber-grid"></div>
+    <div class="bg-glow"></div>
+
+    <div class="container">
+        <div class="glass-panel topbar">
+            <div class="brand">
+                <div class="logo">S</div>
+                <div class="title">
+                    <strong>SecureMail Dashboard</strong>
+                    <span>مرحباً بك، </span>
+                </div>
+            </div>
+            <div class="actions" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <select id="accountSwitcher" class="input" onchange="switchAccount(this.value)"
+                    style="min-width: 200px; font-size: 13px; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text); display: none;">
+                    <option value="">📧 جميع الحسابات</option>
+                </select>
+                <span id="integrationBtnArea"></span>
+                <button class="btn" onclick="openProfileModal()">الملف الشخصي</button>
+                <button class="btn danger" id="logoutBtn">تسجيل الخروج</button>
+            </div>
+        </div>
+
+        <div class="grid" style="margin-top: 20px;">
+
+            <div class="column">
+                <div class="glass-panel card">
+                    <h2>Email Scan / فحص البريد</h2>
+                    <p class="small">أدخل عنوان البريد الإلكتروني لفحصه بحثاً عن أي تهديدات أو تسريبات.</p>
+
+                    <form class="form" id="scanForm">
+                        <div class="field">
+                            <div class="label">البريد الإلكتروني المراد فحصه</div>
+                            <input class="input" type="email" id="targetEmailInput" placeholder="name@example.com"
+                                required>
+                        </div>
+                        <button class="btn primary" type="submit" id="scanBtn">بدء عملية الفحص</button>
+                    </form>
+                </div>
+
+                <div class="glass-panel card">
+                    <div class="row-header">
+                        <h2 style="margin:0;">Recent Scans / آخر الفحوصات</h2>
+                        <a href="#" class="btn" style="font-size: 12px;" onclick="openArchiveModal(event)">عرض الكل</a>
+                    </div>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Score</th>
+                                <th>Verdict</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentScansTableBody">
+                            <tr>
+                                <td colspan="5" style="text-align:center;">جاري تحميل الفحوصات...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="glass-panel card">
+                    <h2>Result / النتيجة الحالية</h2>
+
+                    <div id="resultContent" style="display: none;">
+                        <div class="meter-container">
+                            <svg viewBox="0 0 36 36" class="circular-chart" id="trustMeterChart">
+                                <path class="circle-bg"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path class="circle" id="trustMeterPath" stroke-dasharray="0, 100"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <text x="18" y="16" class="meter-text" id="trustMeterText">0%</text>
+                                <text x="18" y="24" class="meter-subtext" id="trustMeterVerdict">Unknown</text>
+                            </svg>
+                        </div>
+
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
+                            <div style="flex: 1; min-width: 150px;">
+                                <div class="label">البريد المستهدف</div>
+                                <div id="resEmail" style="font-size: 16px; font-weight: bold; word-break: break-all;">-
+                                </div>
+                            </div>
+                            <div style="flex: 1; min-width: 150px;">
+                                <div class="label">مزود الخدمة</div>
+                                <div id="resProvider" style="font-weight: bold; font-size: 14px;">-</div>
+                            </div>
+                            <div style="flex: 1; min-width: 150px;">
+                                <div class="label">بلد النطاق</div>
+                                <div id="resCountry" style="font-weight: bold; font-size: 14px;">-</div>
+                            </div>
+                        </div>
+
+                        <div class="layers-grid" id="layersGrid">
+                            <!-- Layer cards injected here via JS -->
+                        </div>
+
+                        <div style="margin-top:20px;" id="emailContentContainer" style="display: none;">
+                            <div class="label" style="display: flex; justify-content: space-between;">
+                                <span>محتوى الرسالة (Snippets & NLP Highlighting)</span>
+                            </div>
+                            <div class="code-block-glass custom-scroll" id="emailBodySnippet">
+                                <!-- NLP Highlighted Text here -->
+                            </div>
+                        </div>
+
+                        <div style="margin-top:20px;" id="attachmentsContainer" style="display: none;">
+                            <div class="label">المرفقات (Attachments File Analysis)</div>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="attachmentsList">
+                            </div>
+                        </div>
+
+                        <div style="margin-top:20px;" id="urlsContainer" style="display: none;">
+                            <div class="label">تحليل الروابط (URL Reputation)</div>
+                            <ul class="list" id="urlsList"></ul>
+                        </div>
+
+                        <div style="margin-top:20px;">
+                            <div class="label">الملخص والتوصيات الأمنية</div>
+                            <div class="notice" style="border-right: 4px solid var(--primary);" id="recNoticeBox">
+                                <ul class="list" style="margin:0;" id="recList">
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="skelLoading" style="display: none;">
+                        <div class="sk-meter skeleton-box"></div>
+                        <div style="display: flex; gap: 10px;">
+                            <div class="sk-line skeleton-box"></div>
+                            <div class="sk-line skeleton-box"></div>
+                        </div>
+                        <div class="layers-grid" style="margin-top:20px;">
+                            <div style="height: 100px;" class="mini-glass-card skeleton-box"></div>
+                            <div style="height: 100px;" class="mini-glass-card skeleton-box"></div>
+                            <div style="height: 100px;" class="mini-glass-card skeleton-box"></div>
+                            <div style="height: 100px;" class="mini-glass-card skeleton-box"></div>
+                        </div>
+                    </div>
+
+                    <div id="noResult" style="display: none;">
+                        <div class="notice">لا توجد نتائج لعرضها. قم بإجراء فحص جديد الآن.</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            &copy; 2026 SecureMail Dashboard - نظام إدارة الفحص الأمني
+        </div>
+    </div>
+
+    <!-- Comprehensive Scans Archive Modal (Glass Expansion) -->
+    <div class="modal-overlay" id="archiveModal">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2 style="display:flex; gap:10px; align-items:center; margin:0;">
+                    <div class="logo" style="width:30px; height:30px; font-size:14px; box-shadow:none;">S</div>
+                    أرشيف الفحوصات الكامل
+                </h2>
+                <div class="modal-close" onclick="closeArchiveModal()">✕</div>
+            </div>
+
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                <input type="text" id="archiveSearch" class="input" placeholder="بحث بالبريد الإلكتروني..."
+                    style="flex: 1; min-width: 250px;" onkeyup="filterArchive()">
+                <select id="archiveFilter" class="input" style="width: 200px; flex-shrink: 0;"
+                    onchange="filterArchive()">
+                    <option value="ALL">جميع الحالات</option>
+                    <option value="SAFE">آمن (Scores 80+)</option>
+                    <option value="RISK">مشبوه (Scores 50-79)</option>
+                    <option value="HIGH">خطير (Scores &lt; 50)</option>
+                </select>
+                <button class="btn primary" onclick="loadArchiveData()">تحديث القائمة</button>
+            </div>
+
+            <div style="flex: 1; overflow-y: auto; padding-right: 10px;">
+                <table class="table" style="margin-top:0;">
+                    <thead
+                        style="position: sticky; top: 0; background: var(--glass-bg); backdrop-filter: blur(10px); z-index: 1;">
+                        <tr>
+                            <th>ID</th>
+                            <th>Email</th>
+                            <th>Score</th>
+                            <th>Verdict</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archiveTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align:center;">جاري تحميل الأرشيف...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!-- Profile & Integration Modal -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal-content glass-panel" style="max-width: 500px; height: auto;">
+            <div class="modal-header">
+                <h2 style="display:flex; gap:10px; align-items:center; margin:0;">
+                    <span style="font-size: 24px;">👤</span> الملف الشخصي
+                </h2>
+                <div class="modal-close" onclick="closeProfileModal()">✕</div>
+            </div>
+
+            <div id="profileLoading" style="text-align: center; padding: 20px;">
+                <div class="sk-line skeleton-box" style="margin: 0 auto; width: 80%;"></div>
+            </div>
+
+            <div id="profileContent" style="display: none;">
+                <div class="card" style="background: rgba(255,255,255,0.02); margin-bottom: 20px;">
+                    <h3 style="color: var(--accent-cyan); margin-bottom: 15px;">بيانات الحساب</h3>
+                    <div style="margin-bottom: 10px;"><strong>الاسم:</strong> <span id="profName">-</span></div>
+                    <div style="margin-bottom: 10px;"><strong>البريد:</strong> <span id="profEmail">-</span></div>
+                    <div><strong>الهاتف:</strong> <span id="profPhone">-</span></div>
+                </div>
+
+                <div class="card" style="background: rgba(255,255,255,0.02); margin-bottom: 20px;">
+                    <h3 style="color: var(--accent-purple); margin-bottom: 15px;">الحسابات المربوطة (Integrations)</h3>
+                    <div id="profIntegrationsList" style="margin-bottom: 15px;">
+                        جاري التحقق...
+                    </div>
+                    <div class="small" style="margin-top: 10px; color: var(--text-muted); text-align: center;">
+                        إلغاء الربط سيوقف فحص الرسائل الجديدة تلقائياً.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Universal Connection Modal (Phase 2) -->
+    <div class="modal-overlay" id="connectionModal">
+        <div class="modal-content glass-panel" style="max-width: 450px; height: auto;">
+            <div class="modal-header">
+                <h2 style="display:flex; gap:10px; align-items:center; margin:0;">
+                    <span style="font-size: 24px;">🔐</span> ربط حساب بريد جديد
+                </h2>
+                <div class="modal-close" onclick="closeConnectionModal()">✕</div>
+            </div>
+
+            <!-- IMAP Form -->
+            <form id="imapConnectForm" class="form" style="margin-bottom: 0;">
+                <div class="field">
+                    <div class="label">البريد الإلكتروني</div>
+                    <input class="input" type="email" id="imapEmail" placeholder="user@company.com" required>
+                </div>
+                <div class="field">
+                    <div class="label">كلمة مرور التطبيق (IMAP)</div>
+                    <input class="input" type="password" id="imapPassword" placeholder="••••••••" required>
+                </div>
+
+                <!-- Advanced Settings (Manual Override) -->
+                <div style="margin: 10px 0 5px 0;">
+                    <button type="button" onclick="toggleAdvancedSettings()" id="advancedToggleBtn"
+                        style="background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-size:13px; padding:0; display:flex; align-items:center; gap:5px;">
+                        <span id="advancedArrow">◀</span> إعدادات متقدمة (اختياري)
+                    </button>
+                </div>
+                <div id="advancedSettings" style="display:none; animation: fadeInUp 0.3s ease-out forwards;">
+                    <div style="display:flex; gap:10px;">
+                        <div class="field" style="flex:2;">
+                            <div class="label">خادم IMAP (يدوي)</div>
+                            <input class="input" type="text" id="imapHostManual" placeholder="مثال: imap.zoho.com">
+                        </div>
+                        <div class="field" style="flex:1;">
+                            <div class="label">المنفذ</div>
+                            <input class="input" type="number" id="imapPortManual" placeholder="993" min="1" max="65535">
+                        </div>
+                    </div>
+                    <div class="small" style="color:var(--text-muted); margin-bottom:10px;">
+                        💡 اتركها فارغة للكشف التلقائي. استخدمها فقط إذا فشل الاتصال التلقائي.
+                    </div>
+                </div>
+
+                <button class="btn primary" type="submit" id="imapConnectBtn" style="width:100%;">
+                    📬 اتصال عبر IMAP
+                </button>
+            </form>
+
+            <div style="text-align:center; padding: 15px 0; color: var(--text-muted); font-size: 13px;">
+                — أو —
+            </div>
+
+            <!-- Legacy Google OAuth -->
+            <button class="btn" onclick="linkGmail()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                ربط حساب Google (OAuth)
+            </button>
+
+            <div class="small" style="margin-top: 12px; color: var(--text-muted); text-align: center;">
+                💡 لحسابات Gmail/Outlook مع المصادقة الثنائية، استخدم "كلمة مرور التطبيقات" (App Password).
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer"></div>
+
+    <script>
+        // دالة عرض الإشعارات المنبثقة (Toasts)
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <div>${message}</div>
+                <div class="toast-close" onclick="this.parentElement.remove()">✕</div>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideInRight 0.4s reverse forwards';
+                setTimeout(() => toast.remove(), 400);
+            }, 5000);
+        }
+        // التعديل المعماري: حذف الايدي الوهمي واستبداله بجلب التوكن الحقيقي
+        async function fetchWithAuth(url, options = {}) {
+            const token = localStorage.getItem('secureMailToken');
+            if (!token) {
+                window.location.href = 'login.html';
+                return null;
+            }
+            if (!options.headers) options.headers = {};
+            options.headers['Authorization'] = `Bearer ${token}`;
+            const res = await fetch(url, options);
+            if (res.status === 401) {
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = 'login.html';
+                return null;
+            }
+            return res;
+        }
+
+        // On Load Data
+        document.addEventListener("DOMContentLoaded", async () => {
+            // 1. قراءة متغيرات الرابط (URL Parameters)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('integrationSuccess') === 'true') {
+                alert("تم ربط حسابك في Google بنجاح! 🚀");
+                window.history.replaceState({}, document.title, window.location.pathname); // تنظيف الرابط
+            } else if (urlParams.has('integrationError')) {
+                const errType = urlParams.get('integrationError');
+                let errorMsg = 'حدث خطأ غير متوقع أثناء محاولة الربط.';
+
+                if (errType === 'already_linked') errorMsg = 'هذا البريد الإلكتروني مربوط بحساب آخر مسبقاً';
+                else if (errType === 'invalid_token') errorMsg = 'خطأ في المصادقة مع Google. تأكد من تفعيل Gmail API والصلاحيات (Scopes).';
+                else if (errType === 'email_not_found') errorMsg = 'لم يتم العثور على عنوان بريد إلكتروني في حساب Google الخاص بك.';
+                else if (errType === 'no_code') errorMsg = 'لم يتم التحقق من الصلاحيات (No Code).';
+                else if (errType === 'invalid_state') errorMsg = 'جلسة غير صالحة (Invalid State).';
+                else if (errType === 'db_save_failed') errorMsg = 'فشل حفظ بيانات الربط في الخادم.';
+
+                showToast("خطأ في الربط: " + errorMsg, "error");
+                window.history.replaceState({}, document.title, window.location.pathname); // تنظيف الرابط
+            }
+
+            // التحقق الفوري من حالة الاتصال وإخفاء الزر إذا كان نشطاً (UI State Sync)
+            await checkIntegrationStatus();
+            await loadRecentScans();
+        });
+
+        // --- Archive Modal Logic ---
+        let allScansCache = [];
+        let recentScansCache = [];
+        let currentActiveRowId = null;
+
+        // دالة تظليل التهديدات في النص
+        function highlightThreats(text, keywordsArray) {
+            if (!text) return "لا يوجد نص متوفر للرسالة.";
+            if (!keywordsArray || keywordsArray.length === 0) return text;
+
+            let highlighted = text;
+            // نستبدل الكلمات التصيدية بـ <mark> 
+            keywordsArray.forEach(kw => {
+                // نستخدم Regex للبحث غير الحساس لحالة الأحرف (إذا كان انجليزي) وبشكل عام
+                const regex = new RegExp(`(${kw})`, 'gi');
+                highlighted = highlighted.replace(regex, `<mark class="threat-mark">$1</mark>`);
+            });
+            return highlighted;
+        }
+
+        // دالة تعبئة بيانات الفحص في اللوحة اليمنى باستخدام API الجديد لجلب التفاصيل
+        async function loadScanDetails(index, source = 'recent') {
+            const summaryData = source === 'recent' ? recentScansCache[index] : allScansCache[index];
+            if (!summaryData) return;
+
+            // تحديد الصف المُفعل
+            if (currentActiveRowId) {
+                const oldRow = document.getElementById(currentActiveRowId);
+                if (oldRow) oldRow.classList.remove('row-active');
+            }
+            currentActiveRowId = `row-${source}-${index}`;
+            const newRow = document.getElementById(currentActiveRowId);
+            if (newRow) newRow.classList.add('row-active');
+
+            const resultDiv = document.getElementById('resultContent');
+            const noResultDiv = document.getElementById('noResult');
+            const skelLoading = document.getElementById('skelLoading');
+
+            noResultDiv.style.display = 'none';
+            resultDiv.style.display = 'none';
+            skelLoading.style.display = 'block';
+
+            try {
+                // Fetch full detailed DTO from backend
+                const res = await fetchWithAuth(`http://localhost:5275/api/dashboard/scan/${summaryData.id}`);
+                if (!res.ok) throw new Error("Failed to fetch details");
+                const fullData = await res.json();
+
+                skelLoading.style.display = 'none';
+                resultDiv.style.display = 'block';
+
+                // Animation reset
+                resultDiv.style.animation = 'none';
+                resultDiv.offsetHeight; /* trigger reflow */
+                resultDiv.style.animation = 'fadeInUp 0.5s ease-out forwards';
+
+                renderDataToUI(fullData);
+            } catch (err) {
+                console.error(err);
+                skelLoading.style.display = 'none';
+                showToast("خطأ في جلب تفاصيل الفحص", "error");
+            }
+        }
+
+        function renderDataToUI(data) {
+            document.getElementById('resEmail').innerText = data.email || "-";
+            let providerText = data.provider || "-";
+            if (data.isDisposable) providerText += " (وهمي)";
+            document.getElementById('resProvider').innerText = providerText;
+            document.getElementById('resCountry').innerText = data.country || "-";
+
+            // === SVG Trust Meter ===
+            const score = data.trustScore || 0;
+            const path = document.getElementById('trustMeterPath');
+            const text = document.getElementById('trustMeterText');
+            const verdict = document.getElementById('trustMeterVerdict');
+            const chart = document.getElementById('trustMeterChart');
+
+            path.className.baseVal = "circle";
+            chart.parentElement.className = "meter-container";
+
+            if (score >= 80) {
+                path.classList.add('glow-safe');
+                chart.parentElement.classList.add('card-safe');
+            } else if (score >= 50) {
+                path.classList.add('glow-warn');
+                chart.parentElement.classList.add('card-warn');
+            } else {
+                path.classList.add('glow-danger');
+                chart.parentElement.classList.add('card-danger');
+            }
+
+            path.setAttribute('stroke-dasharray', `${score}, 100`);
+            text.textContent = `${score}%`;
+            verdict.textContent = data.riskLevel || "Unknown";
+
+            // === Layers Grid ===
+            const layersHtml = `
+                <div class="mini-glass-card">
+                    <div class="mini-card-title">مصادقة النطاق</div>
+                    <div class="status-icon ${data.hasSpfRecord ? 'pass' : 'fail'}" style="color:${data.hasSpfRecord ? 'var(--success)' : 'var(--danger)'}">SPF: ${data.hasSpfRecord ? 'مدعوم' : 'مفقود'}</div>
+                    <div class="status-icon ${data.hasDmarcRecord ? 'pass' : 'fail'}" style="color:${data.hasDmarcRecord ? 'var(--success)' : 'var(--danger)'}">DMARC: ${data.hasDmarcRecord ? 'مدعوم' : 'مفقود'}</div>
+                </div>
+                <div class="mini-glass-card" style="border-color:${data.maliciousLinksCount > 0 ? 'var(--alert-red)' : ''}">
+                    <div class="mini-card-title">روابط خبيثة</div>
+                    <div class="mini-card-val" style="color:${data.maliciousLinksCount > 0 ? 'var(--alert-red)' : 'var(--success)'}">${data.maliciousLinksCount > 0 ? data.maliciousLinksCount : '0'}</div>
+                    <div style="font-size:11px;color:var(--text-muted)">تم فحص ${data.extractedUrls ? data.extractedUrls.length : 0} رابط</div>
+                </div>
+                <div class="mini-glass-card" style="border-color:${data.phishingKeywordsCount > 0 ? 'var(--alert-yellow)' : ''}">
+                    <div class="mini-card-title">كلمات تصيد (NLP)</div>
+                    <div class="mini-card-val" style="color: ${data.phishingKeywordsCount > 0 ? 'var(--alert-yellow)' : 'var(--success)'}">${data.phishingKeywordsCount || 0}</div>
+                </div>
+                <div class="mini-glass-card" style="border-color:${data.hasExecutableAttachments ? 'var(--alert-red)' : (data.hasSuspiciousAttachments ? 'var(--alert-yellow)' : '')}">
+                    <div class="mini-card-title">مرفقات ضارة</div>
+                    <div class="mini-card-val" style="color:${data.hasExecutableAttachments ? 'var(--alert-red)' : (data.hasSuspiciousAttachments ? 'var(--alert-yellow)' : 'var(--success)')}">
+                        ${data.hasExecutableAttachments ? 'نعم (خطير)' : (data.hasSuspiciousAttachments ? 'ربما مشبوه' : 'لا يوجد')}
+                    </div>
+                </div>
+                <div class="mini-glass-card" style="border-color:${data.isTyposquatSuspect ? 'var(--alert-red)' : ''}">
+                    <div class="mini-card-title">🔤 انتحال النطاق (Typosquatting)</div>
+                    ${data.isTyposquatSuspect
+                        ? `<div class="mini-card-val" style="color:var(--alert-red)">⚠️ مشبوه</div>
+                           <div style="font-size:11px;color:var(--text-muted)">مشابه لـ <strong>${data.typosquatMatchedDomain || '?'}</strong> (فرق ${data.typosquatDistance || '?'} حرف)</div>`
+                        : `<div class="mini-card-val" style="color:var(--success)">سليم</div>
+                           <div style="font-size:11px;color:var(--text-muted)">لا يوجد تشابه مشبوه</div>`
+                    }
+                </div>
+                <div class="mini-glass-card" style="border-color:${(data.highEntropyUrls && data.highEntropyUrls.length > 0) || (data.highEntropyAttachments && data.highEntropyAttachments.length > 0) ? 'var(--alert-yellow)' : ''}">
+                    <div class="mini-card-title">📊 تحليل العشوائية (Entropy)</div>
+                    ${(() => {
+                        const urlCount = data.highEntropyUrls ? data.highEntropyUrls.length : 0;
+                        const attCount = data.highEntropyAttachments ? data.highEntropyAttachments.length : 0;
+                        const total = urlCount + attCount;
+                        if (total > 0) {
+                            return `<div class="mini-card-val" style="color:var(--alert-yellow)">${total} عنصر مشبوه</div>
+                                    <div style="font-size:11px;color:var(--text-muted)">${urlCount > 0 ? urlCount + ' رابط' : ''} ${attCount > 0 ? attCount + ' مرفق' : ''} بنمط عشوائي</div>`;
+                        }
+                        return `<div class="mini-card-val" style="color:var(--success)">سليم</div>
+                                <div style="font-size:11px;color:var(--text-muted)">لا توجد أنماط عشوائية مشبوهة</div>`;
+                    })()}
+                </div>
+                <div class="mini-glass-card" style="border-color:${data.yaraMatched ? 'var(--alert-red)' : ''}; ${data.yaraMatched ? 'background:rgba(239,68,68,0.08);' : ''}">
+                    <div class="mini-card-title">🧬 فحص YARA (توقيعات خبيثة)</div>
+                    ${data.yaraMatched
+                        ? `<div class="mini-card-val" style="color:var(--alert-red); animation: slightPulse 2s infinite alternate;">🚨 كشف تهديد!</div>
+                           <div style="font-size:11px;color:var(--alert-red)">قواعد: ${data.yaraMatchedRules ? data.yaraMatchedRules.join(', ') : 'غير محدد'}</div>`
+                        : `<div class="mini-card-val" style="color:var(--success)">نظيف</div>
+                           <div style="font-size:11px;color:var(--text-muted)">لم يتم رصد توقيعات برمجيات خبيثة</div>`
+                    }
+                </div>
+            `;
+            document.getElementById('layersGrid').innerHTML = layersHtml;
+
+            // === Email Content & NLP Highlights ===
+            const snippetContainer = document.getElementById('emailContentContainer');
+            if (data.plainTextBody) {
+                snippetContainer.style.display = 'block';
+                const keywords = data.phishingKeywordsFound || [];
+                document.getElementById('emailBodySnippet').innerHTML = highlightThreats(data.plainTextBody, keywords);
+            } else {
+                snippetContainer.style.display = 'block';
+                document.getElementById('emailBodySnippet').innerHTML = "لا يوجد نص متوفر للرسالة.";
+            }
+
+            // === Attachments Analysis ===
+            const attContainer = document.getElementById('attachmentsContainer');
+            if (data.attachmentNames && data.attachmentNames.length > 0) {
+                attContainer.style.display = 'block';
+                let attHtml = '';
+                data.attachmentNames.forEach(att => {
+                    const ext = att.includes('.') ? att.substring(att.lastIndexOf('.')).toLowerCase() : '';
+                    const isExe = ['.exe', '.bat', '.cmd', '.vbs', '.js', '.scr'].includes(ext);
+                    const isSus = ['.zip', '.rar', '.pdf', '.docm', '.xlsm'].includes(ext);
+
+                    if (isExe) attHtml += `<span class="badge bad" style="animation: slightPulse 2s infinite alternate;">⚠️ ${att} (خطير!)</span>`;
+                    else if (isSus) attHtml += `<span class="badge warn">📁 ${att} (مشبوه)</span>`;
+                    else attHtml += `<span class="badge ok">📄 ${att}</span>`;
+                });
+                document.getElementById('attachmentsList').innerHTML = attHtml;
+            } else {
+                attContainer.style.display = 'none';
+            }
+
+            // === URL Analysis ===
+            const urlsContainer = document.getElementById('urlsContainer');
+            const urlsList = document.getElementById('urlsList');
+            urlsList.innerHTML = '';
+            if (data.extractedUrls && data.extractedUrls.length > 0) {
+                urlsContainer.style.display = 'block';
+                const maliciousList = data.maliciousUrls || [];
+                const entropyList = data.highEntropyUrls || [];
+
+                data.extractedUrls.slice(0, 5).forEach(url => {
+                    if (maliciousList.includes(url)) {
+                        urlsList.innerHTML += `<li><span class="highlight-danger">⚠️ ${url}</span></li>`;
+                    } else if (entropyList.includes(url)) {
+                        urlsList.innerHTML += `<li><span style="color:var(--alert-yellow); word-break:break-all; font-size:12px;">📊 ${url} <small style="opacity:0.7">(Entropy عالي)</small></span></li>`;
+                    } else {
+                        urlsList.innerHTML += `<li><span style="word-break:break-all; font-size:12px;">${url}</span></li>`;
+                    }
+                });
+                if (data.virusTotalSkippedDueToQuota) {
+                    urlsList.innerHTML += `<li style="color:var(--warning)">تم تخطي فحص VT العميق لبعض الروابط بسبب استنفاد الحصة.</li>`;
+                }
+            } else {
+                urlsContainer.style.display = 'none';
+            }
+
+            // === Reasons & Recommendations ===
+            const recNoticeBox = document.getElementById('recNoticeBox');
+            recNoticeBox.style.borderColor = score >= 80 ? 'var(--success)' : (score >= 50 ? 'var(--warning)' : 'var(--danger)');
+
+            const recList = document.getElementById('recList');
+            recList.innerHTML = '';
+            const combined = [...(data.reasons || []), ...(data.recommendations || [])];
+            if (combined.length === 0) recList.innerHTML = "<li class='rec-item'><span class='rec-icon'>✅</span> لا توجد ملاحظات إضافية.</li>";
+            else {
+                combined.forEach(r => {
+                    let icon = score >= 80 ? '💡' : (score >= 50 ? '⚠️' : '🚨');
+                    recList.innerHTML += `<li class="rec-item"><span class="rec-icon">${icon}</span> <span>${r}</span></li>`;
+                });
+            }
+        }
+
+        async function openArchiveModal(e) {
+            e.preventDefault();
+            document.getElementById('archiveModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            await loadArchiveData();
+        }
+
+        function closeArchiveModal() {
+            document.getElementById('archiveModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        async function loadArchiveData() {
+            const tbody = document.getElementById('archiveTableBody');
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">جاري تحميل الأرشيف...</td></tr>`;
+
+            try {
+                const res = await fetchWithAuth(`http://localhost:5275/api/dashboard/scans`);
+                if (!res || !res.ok) return;
+
+                allScansCache = await res.json();
+                renderArchiveTable(allScansCache);
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--danger);">تعذر تحميل البيانات.</td></tr>`;
+                showToast("فشل في جلب الفحوصات من الخادم", "error");
+            }
+        }
+
+        function filterArchive() {
+            const query = document.getElementById('archiveSearch').value.toLowerCase();
+            const filter = document.getElementById('archiveFilter').value;
+
+            const filtered = allScansCache.filter(scan => {
+                const matchesQuery = scan.email.toLowerCase().includes(query);
+                let matchesFilter = true;
+
+                if (filter === 'SAFE') matchesFilter = scan.score >= 80;
+                else if (filter === 'RISK') matchesFilter = scan.score >= 50 && scan.score < 80;
+                else if (filter === 'HIGH') matchesFilter = scan.score < 50;
+
+                return matchesQuery && matchesFilter;
+            });
+
+            renderArchiveTable(filtered);
+        }
+
+        function renderArchiveTable(scans) {
+            const tbody = document.getElementById('archiveTableBody');
+            tbody.innerHTML = '';
+
+            if (scans.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">لا توجد نتائج مطابقة للبحث.</td></tr>`;
+                return;
+            }
+
+            scans.forEach((scan, index) => {
+                let badgeClass = 'ok';
+                if (scan.verdict === 'HIGH') badgeClass = 'bad';
+                else if (scan.verdict === 'RISK') badgeClass = 'warn';
+
+                const row = `
+                    <tr onclick="loadScanDetails(${index}, 'archive')" id="row-archive-${index}" style="animation: fadeInUp 0.4s ease-out forwards; animation-delay: ${index * 0.05}s; opacity: 0;">
+                        <td>#${scan.id}</td>
+                        <td style="font-weight: 500;">${scan.email}</td>
+                        <td>${scan.score}/100</td>
+                        <td><span class="badge ${badgeClass}">${scan.verdict}</span></td>
+                        <td class="small">${scan.date}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+        // -----------------------------
+
+        // ---=== PHASE 2: Multi-Account Integration Status ===---
+        let selectedIntegrationId = null; // null = all accounts
+
+        async function checkIntegrationStatus() {
+            const btnArea = document.getElementById('integrationBtnArea');
+            const switcher = document.getElementById('accountSwitcher');
+            try {
+                const res = await fetchWithAuth(`http://localhost:5275/api/integration/status`);
+                if (!res || !res.ok) return;
+                const data = await res.json();
+
+                if (data.integrations && data.integrations.length > 0) {
+                    // Populate account switcher
+                    switcher.innerHTML = '<option value="">📧 جميع الحسابات</option>';
+                    data.integrations.forEach(i => {
+                        const icon = i.provider === 'GMAIL' ? '🔵' : '📬';
+                        switcher.innerHTML += `<option value="${i.id}">${icon} ${i.providerAccountEmail}</option>`;
+                    });
+                    switcher.style.display = 'inline-block';
+
+                    // Show connected badge with count
+                    btnArea.innerHTML = `<span class="badge ok active-pulse" style="padding:8px 14px; font-size: 13px; display:inline-block; animation: slideInRight 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;">🟢 ${data.count} حساب متصل</span>
+                    <button class="btn primary" style="font-size:12px; padding:8px 14px;" onclick="openConnectionModal()">➕ ربط حساب جديد</button>`;
+                } else {
+                    switcher.style.display = 'none';
+                    btnArea.innerHTML = `<button class="btn primary" style="display:inline-block; animation: slideInRight 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;" onclick="openConnectionModal()">🔑 ربط حساب بريد جديد</button>`;
+                }
+            } catch (e) {
+                console.error("Failed to check status", e);
+            }
+        }
+
+        function switchAccount(id) {
+            selectedIntegrationId = id || null;
+            loadRecentScans();
+        }
+
+        function linkGmail() {
+            const token = localStorage.getItem('secureMailToken');
+            window.location.href = `http://localhost:5275/api/integration/google/login?sessionToken=${token}`;
+        }
+
+        // ---=== Connection Modal ===---
+        function openConnectionModal() {
+            document.getElementById('connectionModal').classList.add('active');
+            document.getElementById('imapEmail').value = '';
+            document.getElementById('imapPassword').value = '';
+            document.getElementById('imapHostManual').value = '';
+            document.getElementById('imapPortManual').value = '';
+            document.getElementById('advancedSettings').style.display = 'none';
+            document.getElementById('advancedArrow').textContent = '◀';
+        }
+
+        function toggleAdvancedSettings() {
+            const panel = document.getElementById('advancedSettings');
+            const arrow = document.getElementById('advancedArrow');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                arrow.textContent = '▼';
+            } else {
+                panel.style.display = 'none';
+                arrow.textContent = '◀';
+            }
+        }
+
+        function closeConnectionModal() {
+            document.getElementById('connectionModal').classList.remove('active');
+        }
+
+        document.getElementById('imapConnectForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('imapEmail').value;
+            const password = document.getElementById('imapPassword').value;
+            const manualHost = document.getElementById('imapHostManual').value.trim();
+            const manualPort = document.getElementById('imapPortManual').value.trim();
+            const btn = document.getElementById('imapConnectBtn');
+
+            btn.disabled = true;
+            btn.innerText = 'جاري الاتصال...';
+
+            // Build request payload — include manual overrides only if provided
+            const payload = { email, password };
+            if (manualHost) payload.imapHost = manualHost;
+            if (manualPort) payload.imapPort = parseInt(manualPort);
+
+            try {
+                const res = await fetchWithAuth('http://localhost:5275/api/integration/imap/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res && res.ok) {
+                    const data = await res.json();
+                    showToast(data.message || 'تم ربط الحساب بنجاح!', 'success');
+                    closeConnectionModal();
+                    await checkIntegrationStatus();
+                } else {
+                    const err = await res.json();
+                    showToast(err.message || 'فشل الاتصال', 'error');
+                }
+            } catch (e) {
+                showToast('خطأ في الاتصال بالخادم', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '📬 اتصال عبر IMAP';
+            }
+        });
+
+        // ---=== Recent Scans (with inbox isolation) ===---
+        async function loadRecentScans() {
+            try {
+                let url = `http://localhost:5275/api/dashboard/scans`;
+                if (selectedIntegrationId) url += `?integrationId=${selectedIntegrationId}`;
+
+                const res = await fetchWithAuth(url);
+                if (!res || !res.ok) return;
+                recentScansCache = await res.json();
+
+                const tbody = document.getElementById('recentScansTableBody');
+                tbody.innerHTML = '';
+
+                if (recentScansCache.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">لا توجد فحوصات آمنية مسجلة.</td></tr>`;
+                    return;
+                }
+
+                recentScansCache.forEach((scan, index) => {
+                    let badgeClass = 'ok';
+                    if (scan.verdict === 'HIGH') badgeClass = 'bad';
+                    else if (scan.verdict === 'RISK') badgeClass = 'warn';
+
+                    const row = `
+                        <tr onclick="loadScanDetails(${index}, 'recent')" id="row-recent-${index}">
+                            <td>#${scan.id}</td>
+                            <td>${scan.email}</td>
+                            <td>${scan.score}/100</td>
+                            <td><span class="badge ${badgeClass}">${scan.verdict}</span></td>
+                            <td class="small">${scan.date}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } catch (e) {
+                console.error("Error loading scans", e);
+            }
+        }
+
+        // ---=== Profile Management (Multi-Account) ===---
+        async function openProfileModal() {
+            document.getElementById('profileModal').classList.add('active');
+            document.getElementById('profileContent').style.display = 'none';
+            document.getElementById('profileLoading').style.display = 'block';
+
+            try {
+                const res = await fetchWithAuth(`http://localhost:5275/api/user/profile`);
+                if (res && res.ok) {
+                    const data = await res.json();
+                    document.getElementById('profName').innerText = data.fullName || '-';
+                    document.getElementById('profEmail').innerText = data.email || '-';
+                    document.getElementById('profPhone').innerText = data.phone || '-';
+
+                    const listDiv = document.getElementById('profIntegrationsList');
+
+                    if (data.integrations && data.integrations.length > 0) {
+                        let html = '';
+                        data.integrations.forEach(i => {
+                            const icon = i.provider === 'GMAIL' ? '🔵 Google' : '📬 IMAP';
+                            html += `
+                                <div style="display:flex; justify-content:space-between; align-items:center;
+                                            padding:12px 10px; border-bottom:1px solid var(--border);">
+                                    <div>
+                                        <span style="font-weight:600;">${icon}</span>
+                                        <span style="margin-right:8px; color:var(--text);">${i.providerAccountEmail}</span>
+                                    </div>
+                                    <button class="btn danger"
+                                        style="font-size:11px; padding:5px 12px;"
+                                        onclick="unlinkIntegration(${i.id})">إلغاء الربط</button>
+                                </div>`;
+                        });
+                        listDiv.innerHTML = html;
+                    } else {
+                        listDiv.innerHTML = `<span style="color: var(--text-muted);">غير متصل بأي حساب سحابي حالياً.</span>`;
+                    }
+
+                    document.getElementById('profileLoading').style.display = 'none';
+                    document.getElementById('profileContent').style.display = 'block';
+                } else {
+                    showToast('فشل في تحميل بيانات الملف الشخصي', 'error');
+                    closeProfileModal();
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('خطأ في الاتصال بالخادم', 'error');
+                closeProfileModal();
+            }
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.remove('active');
+        }
+
+        async function unlinkIntegration(integrationId) {
+            if (!confirm('هل أنت متأكد من رغبتك في إلغاء ربط هذا الحساب؟')) return;
+
+            try {
+                const res = await fetchWithAuth(`http://localhost:5275/api/integration/unlink/${integrationId}`, { method: 'DELETE' });
+                if (res && res.ok) {
+                    showToast('تم إلغاء ربط الحساب بنجاح', 'success');
+                    closeProfileModal();
+                    await checkIntegrationStatus();
+                } else {
+                    showToast('حدث خطأ أثناء إلغاء الربط', 'error');
+                }
+            } catch (e) {
+                showToast('خطأ في الاتصال', 'error');
+            }
+        }
+
+        // كود تسجيل الخروج وحذف جميع بيانات الجلسة (QA Fix)
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        });
+
+        // ربط الفحص بـ API
+        document.getElementById('scanForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('targetEmailInput').value;
+            const btn = document.getElementById('scanBtn');
+            const resultDiv = document.getElementById('resultContent');
+            const noResultDiv = document.getElementById('noResult');
+            const skelLoading = document.getElementById('skelLoading');
+
+            btn.disabled = true;
+            btn.innerText = "جاري الفحص العميق...";
+            noResultDiv.style.display = 'none';
+            resultDiv.style.display = 'none';
+            skelLoading.style.display = 'block';
+
+            try {
+                const response = await fetch(`http://localhost:5275/api/analyzer/email?email=${encodeURIComponent(email)}`);
+                const data = await response.json();
+
+                skelLoading.style.display = 'none';
+
+                if (response.ok) {
+                    // Cache the new scan specifically for instant viewing (even if not from table click)
+                    recentScansCache.unshift(data); // Add to beginning of cache for loadScanDetails to theoretically access although it's index-based
+
+                    // Render directly to UI
+                    resultDiv.style.display = 'block';
+                    renderDataToUI(data);
+
+                    // Re-fetch the table to show the new entry
+                    await loadRecentScans();
+
+                } else {
+                    showToast(data.message || "حدث خطأ في الفحص", "error");
+                    noResultDiv.style.display = 'block';
+                }
+            } catch (error) {
+                skelLoading.style.display = 'none';
+                noResultDiv.style.display = 'block';
+                showToast("تعذر الاتصال بخادم الـ API", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "بدء الفحص الجديد";
+            }
+        });
+    </script>
+</body>
+
+</html>
